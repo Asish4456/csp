@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groundwater Level & Recharge Tracker - Gudivada</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        header { background-color: #007bff; color: white; padding: 1rem; text-align: center; }
+        nav { display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem; }
+        nav a { color: white; text-decoration: none; padding: 0.5rem; border-radius: 5px; background-color: #0056b3; }
+        nav a:hover { background-color: #003d82; }
+        section { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .banner { background-color: #e9ecef; padding: 2rem; text-align: center; border-radius: 10px; margin-bottom: 2rem; }
+        .dashboard { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; }
+        .chart { width: 100%; max-width: 400px; background: white; padding: 1rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #map { height: 400px; width: 100%; border-radius: 10px; margin-bottom: 2rem; }
+        .awareness { background: white; padding: 1rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .awareness img, .awareness video { max-width: 100%; height: auto; margin: 1rem 0; }
+        form { background: white; padding: 1rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        form input, form textarea, form button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.5rem; }
+        .updates { background: white; padding: 1rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        @media (max-width: 768px) { .dashboard { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Groundwater Level & Recharge Tracker - Gudivada</h1>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#dashboard">Dashboard</a>
+            <a href="#map">Recharge Map</a>
+            <a href="#awareness">Awareness</a>
+            <a href="#report">Report</a>
+            <a href="#updates">Updates</a>
+        </nav>
+    </header>
+
+    <section id="home" class="banner">
+        <h2>Current Groundwater Situation in Gudivada – Let’s Recharge Together!</h2>
+        <p>Visualize groundwater trends, report recharge efforts, and learn how to protect our water resources.</p>
+    </section>
+
+    <section id="dashboard">
+        <h2>Data Visualization Dashboard</h2>
+        <div class="dashboard">
+            <div class="chart">
+                <h3>Average Water Depth per Month (2023)</h3>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="chart">
+                <h3>Groundwater Trend Over Time</h3>
+                <canvas id="lineChart"></canvas>
+            </div>
+            <div class="chart">
+                <h3>Water Use Distribution</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <section id="map">
+        <h2>Recharge Map</h2>
+        <div id="map"></div>
+    </section>
+
+    <section id="awareness" class="awareness">
+        <h2>Awareness & Learning Section</h2>
+        <h3>Causes of Depletion</h3>
+        <p>Continuous extraction for agriculture and domestic use, combined with reduced rainfall, has led to declining groundwater levels in Gudivada.</p>
+        <h3>Suggested Recharge Methods</h3>
+        <ul>
+            <li>Percolation tanks to capture rainwater.</li>
+            <li>Recharge wells for direct groundwater replenishment.</li>
+            <li>Afforestation to improve soil absorption.</li>
+        </ul>
+        <h3>Photos & Videos from CSP Demonstrations</h3>
+        <img src="https://via.placeholder.com/600x300?text=CSP+Demo+Photo" alt="CSP Demo Photo">
+        <video controls>
+            <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4"> <!-- Replace with your CSP video URL -->
+            Your browser does not support the video tag.
+        </video>
+    </section>
+
+    <section id="report">
+        <h2>Community Reporting Form</h2>
+        <form id="reportForm">
+            <label for="location">Location:</label>
+            <input type="text" id="location" required>
+            <label for="type">Type (Borewell/Recharge Pit):</label>
+            <input type="text" id="type" required>
+            <label for="description">Description:</label>
+            <textarea id="description" required></textarea>
+            <button type="submit">Submit Report</button>
+        </form>
+        <div id="reportsList"></div>
+    </section>
+
+    <section id="updates" class="updates">
+        <h2>Monthly Update Section</h2>
+        <p><strong>October 2023:</strong> Groundwater levels improved by 0.5 meters! 5 new recharge pits constructed in Ward 4.</p>
+        <p><strong>September 2023:</strong> Awareness campaign reached 200 households. Water scarcity reduced in Zone A.</p>
+        <!-- Add more updates here -->
+    </section>
+
+    <script>
+        // Dummy data for charts (replace with your CSP survey data)
+        const barData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Average Water Depth (meters)',
+                data: [10, 9.8, 9.5, 9.2, 8.9, 8.7, 8.5, 8.3, 8.1, 7.9, 7.7, 7.5],
+                backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                borderColor: 'rgba(0, 123, 255, 1)',
+                borderWidth: 1
+            }]
+        };
+
+        const lineData = {
+            labels: ['2019', '2020', '2021', '2022', '2023'],
+            datasets: [{
+                label: 'Groundwater Level Trend (meters)',
+                data: [12, 11, 10, 9, 8],
+                fill: false,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                tension: 0.1
+            }]
+        };
+
+        const pieData = {
+            labels: ['Domestic', 'Agriculture', 'Industrial'],
+            datasets: [{
+                data: [30, 60, 10],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+            }]
+        };
+
+        // Initialize Charts
+        new Chart(document.getElementById('barChart'), { type: 'bar', data: barData });
+        new Chart(document.getElementById('lineChart'), { type: 'line', data: lineData });
+        new Chart(document.getElementById('pieChart'), { type: 'pie', data: pieData });
+
+        // Initialize Map with Leaflet.js
+        const map = L.map('map').setView([16.4419, 80.9926], 13); // Gudivada coordinates
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Dummy markers (replace with real data)
+        L.marker([16.4419, 80.9926]).addTo(map).bindPopup('Borewell - High Scarcity');
+        L.marker([16.45, 80.99]).addTo(map).bindPopup('Recharge Pit - Rainwater System');
+        L.circle([16.44, 80.995], { color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 500 }).addTo(map).bindPopup('Scarcity Zone');
+
+        // Community Reporting Form (saves to local JSON)
+        let reports = JSON.parse(localStorage.getItem('reports')) || [];
+        const form = document.getElementById('reportForm');
+        const reportsList = document.getElementById('reportsList');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const report = {
+                location: document.getElementById('location').value,
+                type: document.getElementById('type').value,
+                description: document.getElementById('description').value
+            };
+            reports.push(report);
+            localStorage.setItem('reports', JSON.stringify(reports));
+            displayReports();
+            form.reset();
+        });
+
+        function displayReports() {
+            reportsList.innerHTML = '<h3>Recent Reports:</h3>' + reports.map(r => `<p><strong>${r.type}</strong> at ${r.location}: ${r.description}</p>`).join('');
+        }
+        displayReports();
+    </script>
+</body>
+</html>
